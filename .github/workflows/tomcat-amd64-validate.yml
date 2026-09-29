@@ -8,13 +8,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Pull AMD64 image
-        run: docker pull theencodedbong/tomcat:10.1-jdk21-amd64
+      - name: Pull final multi-architecture image
+        run: docker pull --platform linux/amd64 theencodedbong/tomcat:10.1-jdk21
 
       - name: Verify image architecture
         run: |
           docker image inspect \
-            theencodedbong/tomcat:10.1-jdk21-amd64 \
+            theencodedbong/tomcat:10.1-jdk21 \
             --format '{{.Architecture}}'
 
       - name: Start Tomcat
@@ -22,7 +22,8 @@ jobs:
           docker run -d \
             --name tomcat-amd64-test \
             -p 8080:8080 \
-            theencodedbong/tomcat:10.1-jdk21-amd64
+            --platform linux/amd64 \
+            theencodedbong/tomcat:10.1-jdk21
 
       - name: Wait for Tomcat
         run: |
