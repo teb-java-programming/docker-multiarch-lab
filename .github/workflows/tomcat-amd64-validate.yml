@@ -1,0 +1,44 @@
+name: Validate Tomcat AMD64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pull AMD64 image
+        run: docker pull theencodedbong/tomcat:10.1-jdk21-amd64
+
+      - name: Verify image architecture
+        run: |
+          docker image inspect \
+            theencodedbong/tomcat:10.1-jdk21-amd64 \
+            --format '{{.Architecture}}'
+
+      - name: Start Tomcat
+        run: |
+          docker run -d \
+            --name tomcat-amd64-test \
+            -p 8080:8080 \
+            theencodedbong/tomcat:10.1-jdk21-amd64
+
+      - name: Wait for Tomcat
+        run: |
+          for i in {1..30}; do
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -qE '^(200|404)$'; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs tomcat-amd64-test
+          exit 1
+
+      - name: Show Tomcat logs
+        run: docker logs tomcat-amd64-test
+
+      - name: Stop Tomcat
+        if: always()
+        run: docker rm -f tomcat-amd64-test
