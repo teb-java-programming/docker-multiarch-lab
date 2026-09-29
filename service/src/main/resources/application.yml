@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/orclpdb1
+    username: system
+    password: Oracl3124
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  jms:
+    listener:
+      auto-startup: false
+
+ibm:
+  mq:
+    queue-manager: QM1
+    channel: DEV.APP.SVRCONN
+    conn-name: localhost(1414)
+    user: app
+    password: passw0rd
+
+server:
+  port: 8080
+
+validation-service:
+  base-url: http://localhost:8081
