@@ -11,6 +11,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build service
+        run: mvn -pl service clean package
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -20,11 +30,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Create AMD64 Dockerfile
+        run: |
+          cat > /tmp/Dockerfile.tomcat-amd64 <<'EOF'
+          FROM tomcat:10.1-jdk21
+          COPY service/target/service.war /usr/local/tomcat/webapps/service.war
+          EOF
+
       - name: Build and push AMD64 image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: core/docker/tomcat/Dockerfile
+          file: /tmp/Dockerfile.tomcat-amd64
           platforms: linux/amd64
           push: true
           tags: theencodedbong/tomcat:10.1-jdk21-amd64
