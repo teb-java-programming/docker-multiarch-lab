@@ -57,17 +57,16 @@ jobs:
 
       - name: Verify Oracle version and edition
         run: |
-          docker exec oracle-official-amd64-test \
+          docker exec \
+            -e ORACLE_SID=ORCLCDB \
+            oracle-official-amd64-test \
             bash -c "echo 'select banner from v\\$version;' | sqlplus -s / as sysdba"
-
-      - name: Inspect Oracle environment
-        run: |
-          docker exec oracle-official-amd64-test \
-            bash -c 'echo "ORACLE_HOME=$ORACLE_HOME"; echo "ORACLE_SID=$ORACLE_SID"; echo "PATH=$PATH"; ps -ef | grep [p]mon'
 
       - name: Verify ORCLPDB1
         run: |
-          docker exec oracle-official-amd64-test \
+          docker exec \
+            -e ORACLE_SID=ORCLCDB \
+            oracle-official-amd64-test \
             bash -c "echo \"select name, open_mode from v\\$pdbs where name = 'ORCLPDB1';\" | sqlplus -s / as sysdba"
 
       - name: Show Oracle logs
