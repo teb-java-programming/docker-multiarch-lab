@@ -1,0 +1,58 @@
+name: Validate Kafka AMD64
+
+'on':
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pull AMD64 image
+        run: |
+          docker pull \
+            --platform linux/amd64 \
+            theencodedbong/kafka:3.9.2-amd64
+
+      - name: Verify image architecture
+        run: |
+          docker image inspect \
+            theencodedbong/kafka:3.9.2-amd64 \
+            --format '{{.Architecture}}'
+
+      - name: Start Kafka
+        run: |
+          docker run -d \
+            --name kafka-amd64-test \
+            --platform linux/amd64 \
+            -p 9092:9092 \
+            -p 9093:9093 \
+            -e KAFKA_PROCESS_ROLES=broker,controller \
+            -e KAFKA_NODE_ID=1 \
+            -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093 \
+            -e KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093 \
+            -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
+            -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+            -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+            -e KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1 \
+            -e KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1 \
+            theencodedbong/kafka:3.9.2-amd64
+
+      - name: Wait for Kafka
+        run: |
+          for i in {1..30}; do
+            if docker logs kafka-amd64-test 2>&1 | grep -q "Kafka Server started"; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs kafka-amd64-test
+          exit 1
+
+      - name: Show Kafka logs
+        run: docker logs kafka-amd64-test
+
+      - name: Stop Kafka
+        if: always()
+        run: docker rm -f kafka-amd64-test
