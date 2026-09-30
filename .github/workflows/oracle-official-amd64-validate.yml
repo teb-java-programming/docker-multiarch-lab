@@ -60,6 +60,11 @@ jobs:
           docker exec oracle-official-amd64-test \
             bash -c "echo 'select banner from v\\$version;' | sqlplus -s / as sysdba"
 
+      - name: Verify ORCLPDB1
+        run: |
+          docker exec oracle-official-amd64-test \
+            bash -c "echo \"select name, open_mode from v\\$pdbs where name = 'ORCLPDB1';\" | sqlplus -s / as sysdba"
+
       - name: Show Oracle logs
         if: always()
         run: docker logs oracle-official-amd64-test
