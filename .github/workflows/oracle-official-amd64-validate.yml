@@ -69,6 +69,18 @@ jobs:
             oracle-official-amd64-test \
             bash -c "printf '%s\n' \"select name, open_mode from v\\\$pdbs where name = 'ORCLPDB1';\" | sqlplus -s / as sysdba"
 
+      - name: Verify port 1521
+        run: |
+          docker exec oracle-official-amd64-test \
+            bash -c "echo > /dev/tcp/127.0.0.1/1521"
+
+      - name: Verify SYSTEM login to ORCLPDB1
+        run: |
+          docker exec \
+            -e ORACLE_SID=ORCLCDB \
+            oracle-official-amd64-test \
+            bash -c "printf '%s\n' 'select sys_context('\''USERENV'\'','\''DB_NAME'\'') from dual;' | sqlplus -s system/Oracl3124@ORCLPDB1"
+
       - name: Show Oracle logs
         if: always()
         run: docker logs oracle-official-amd64-test
