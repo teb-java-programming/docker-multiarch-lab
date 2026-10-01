@@ -49,8 +49,9 @@ jobs:
       - name: Wait for queue manager
         run: |
           for i in {1..60}; do
-            if docker exec ibm-mq-amd64-test dspmq 2>/dev/null \
-              | grep -q 'QMNAME(QM1).*STATUS(RUNNING)'; then
+            if docker exec ibm-mq-amd64-test \
+              dspmq -m QM1 -o status 2>/dev/null \
+              | grep -q 'STATUS(RUNNING)'; then
               exit 0
             fi
 
