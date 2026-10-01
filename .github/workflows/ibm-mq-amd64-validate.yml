@@ -1,0 +1,78 @@
+name: Validate IBM MQ AMD64
+
+'on':
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show runner architecture
+        run: |
+          uname -m
+          docker info --format '{{.Architecture}}'
+
+      - name: Clone IBM MQ container repository
+        run: |
+          git clone https://github.com/ibm-messaging/mq-container.git
+          cd mq-container
+          git checkout v9.4.5.1
+
+      - name: Build IBM MQ developer server
+        working-directory: mq-container
+        run: |
+          make build-devserver
+
+      - name: Show built image
+        run: |
+          docker images ibm-mqadvanced-server-dev
+
+      - name: Verify image architecture
+        run: |
+          docker image inspect \
+            ibm-mqadvanced-server-dev:9.4.5.1 \
+            --format '{{.Architecture}}'
+
+      - name: Start IBM MQ
+        run: |
+          docker run -d \
+            --name ibm-mq-amd64-test \
+            --platform linux/amd64 \
+            -e LICENSE=accept \
+            -e MQ_QMGR_NAME=QM1 \
+            -e MQ_APP_PASSWORD=passw0rd \
+            -p 1414:1414 \
+            -p 9443:9443 \
+            ibm-mqadvanced-server-dev:9.4.5.1
+
+      - name: Wait for queue manager
+        run: |
+          for i in {1..60}; do
+            if docker exec ibm-mq-amd64-test dspmq 2>/dev/null \
+              | grep -q 'QMNAME(QM1).*STATUS(RUNNING)'; then
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          docker logs ibm-mq-amd64-test
+          exit 1
+
+      - name: Verify IBM MQ queue manager
+        run: |
+          docker exec ibm-mq-amd64-test dspmq
+
+      - name: Verify IBM MQ listener
+        run: |
+          docker exec ibm-mq-amd64-test \
+            bash -c "echo > /dev/tcp/127.0.0.1/1414"
+
+      - name: Show IBM MQ logs
+        if: always()
+        run: docker logs ibm-mq-amd64-test
+
+      - name: Stop IBM MQ
+        if: always()
+        run: docker rm -f ibm-mq-amd64-test || true
