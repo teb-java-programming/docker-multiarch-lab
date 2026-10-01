@@ -1,0 +1,88 @@
+name: Validate WireMock AMD64
+
+'on':
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show runner architecture
+        run: |
+          uname -m
+          docker info --format '{{.Architecture}}'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build WireMock AMD64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: core/docker/wiremock/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: multiarch-lab/wiremock:3.13.2-amd64
+
+      - name: Verify image architecture
+        run: |
+          docker image inspect \
+            multiarch-lab/wiremock:3.13.2-amd64 \
+            --format '{{.Architecture}}'
+
+      - name: Start WireMock
+        run: |
+          docker run -d \
+            --name wiremock-amd64-test \
+            -p 8080:8080 \
+            -v "$GITHUB_WORKSPACE/core/wiremock:/home/wiremock:ro" \
+            multiarch-lab/wiremock:3.13.2-amd64
+
+      - name: Wait for WireMock
+        run: |
+          for i in {1..30}; do
+            if curl -s -o /dev/null -w "%{http_code}" \
+              http://localhost:8080/__admin/health \
+              | grep -q '^200$'; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          docker logs wiremock-amd64-test
+          exit 1
+
+      - name: Verify admin endpoint
+        run: |
+          curl -fsS http://localhost:8080/__admin/
+
+      - name: Verify valid customer and product mapping
+        run: |
+          response=$(curl -fsS \
+            http://localhost:8080/validation/customers/CUST-123/products/PROD-123)
+
+          echo "$response"
+
+          echo "$response" | grep -q '"valid"[[:space:]]*:[[:space:]]*true'
+
+      - name: Verify invalid customer and product mapping
+        run: |
+          response=$(curl -fsS \
+            http://localhost:8080/validation/customers/CUST-999/products/PROD-999)
+
+          echo "$response"
+
+          echo "$response" | grep -q '"valid"[[:space:]]*:[[:space:]]*false'
+
+      - name: Show WireMock logs
+        if: always()
+        run: docker logs wiremock-amd64-test
+
+      - name: Stop WireMock
+        if: always()
+        run: docker rm -f wiremock-amd64-test || true
