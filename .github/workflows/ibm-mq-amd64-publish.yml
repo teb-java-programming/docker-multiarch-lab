@@ -1,0 +1,46 @@
+name: Publish IBM MQ AMD64
+
+'on':
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone IBM MQ container repository
+        run: |
+          git clone https://github.com/ibm-messaging/mq-container.git
+          cd mq-container
+          git checkout v9.4.5.1
+
+      - name: Build IBM MQ developer server
+        working-directory: mq-container
+        run: |
+          make build-devserver
+
+      - name: Show built image
+        run: |
+          docker images ibm-mqadvanced-server-dev
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag AMD64 image
+        run: |
+          docker tag \
+            ibm-mqadvanced-server-dev:9.4.5.1-amd64 \
+            theencodedbong/ibm-mq:9.4.5.1-amd64
+
+      - name: Push AMD64 image
+        run: |
+          docker push \
+            theencodedbong/ibm-mq:9.4.5.1-amd64
+
+      - name: Verify published AMD64 image
+        run: |
+          docker buildx imagetools inspect \
+            theencodedbong/ibm-mq:9.4.5.1-amd64
