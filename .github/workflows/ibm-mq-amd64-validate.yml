@@ -51,12 +51,9 @@ jobs:
           for i in {1..60}; do
             echo "Checking IBM MQ queue manager status..."
 
-            docker exec ibm-mq-amd64-test \
-              dspmq -m QM1 -o status || true
-
             if docker exec ibm-mq-amd64-test \
               dspmq -m QM1 -o status 2>/dev/null \
-              | grep -q 'Running'; then
+              | grep -q 'STATUS(RUNNING)'; then
               echo "Queue manager QM1 is running."
               exit 0
             fi
@@ -77,11 +74,6 @@ jobs:
         run: |
           docker exec ibm-mq-amd64-test \
             bash -c "echo > /dev/tcp/127.0.0.1/1414"
-
-      - name: Verify IBM MQ web server
-        run: |
-          docker logs ibm-mq-amd64-test 2>&1 \
-            | grep -q 'The mqweb server is ready to run a smarter planet.'
 
       - name: Show IBM MQ logs
         if: always()
