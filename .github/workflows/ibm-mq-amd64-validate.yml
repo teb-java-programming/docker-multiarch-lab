@@ -31,7 +31,7 @@ jobs:
       - name: Verify image architecture
         run: |
           docker image inspect \
-            ibm-mqadvanced-server-dev:9.4.5.1 \
+            ibm-mqadvanced-server-dev:9.4.5.1-amd64 \
             --format '{{.Architecture}}'
 
       - name: Start IBM MQ
@@ -44,7 +44,7 @@ jobs:
             -e MQ_APP_PASSWORD=passw0rd \
             -p 1414:1414 \
             -p 9443:9443 \
-            ibm-mqadvanced-server-dev:9.4.5.1
+            ibm-mqadvanced-server-dev:9.4.5.1-amd64
 
       - name: Wait for queue manager
         run: |
