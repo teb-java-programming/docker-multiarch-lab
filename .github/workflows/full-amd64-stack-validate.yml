@@ -195,7 +195,7 @@ jobs:
         run: |
           for i in {1..60}; do
             response=$(curl -s -o /dev/null -w "%{http_code}" \
-              http://localhost:8080/api/orders/999999 || true)
+              http://localhost:8080/service/api/orders/999999 || true)
 
             echo "Application check $i: HTTP status $response"
 
@@ -222,7 +222,7 @@ jobs:
               "productId": "PROD-123",
               "quantity": 2
             }' \
-            http://localhost:8080/api/orders)
+            http://localhost:8080/service/api/orders)
 
           echo "HTTP status: $response"
           cat /tmp/order-response.json
@@ -243,7 +243,7 @@ jobs:
       - name: Verify GET order
         run: |
           response=$(curl -s -o /tmp/get-order-response.json -w "%{http_code}" \
-            http://localhost:8080/api/orders/${ORDER_ID})
+            http://localhost:8080/service/api/orders/${ORDER_ID})
 
           echo "HTTP status: $response"
           cat /tmp/get-order-response.json
@@ -262,7 +262,7 @@ jobs:
               "productId": "PROD-123",
               "quantity": 0
             }' \
-            http://localhost:8080/api/orders)
+            http://localhost:8080/service/api/orders)
 
           echo "HTTP status: $response"
 
@@ -280,7 +280,7 @@ jobs:
               "productId": "PROD-999",
               "quantity": 1
             }' \
-            http://localhost:8080/api/orders)
+            http://localhost:8080/service/api/orders)
 
           echo "HTTP status: $response"
 
