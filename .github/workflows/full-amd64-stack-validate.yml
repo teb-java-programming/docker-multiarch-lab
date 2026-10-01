@@ -195,7 +195,9 @@ jobs:
         run: |
           for i in {1..60}; do
             response=$(curl -s -o /dev/null -w "%{http_code}" \
-              http://localhost:8080/api/orders/999999)
+              http://localhost:8080/api/orders/999999 || true)
+
+            echo "Application check $i: HTTP status $response"
 
             if [ "$response" = "404" ]; then
               echo "Application is ready."
@@ -205,6 +207,8 @@ jobs:
             sleep 2
           done
 
+          echo "Application did not become ready."
+          docker compose -f /tmp/docker-compose-amd64.yml ps
           docker compose -f /tmp/docker-compose-amd64.yml logs tomcat
           exit 1
 
