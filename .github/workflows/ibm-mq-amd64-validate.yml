@@ -53,7 +53,7 @@ jobs:
 
             if docker exec ibm-mq-amd64-test \
               dspmq -m QM1 -o status 2>/dev/null \
-              | grep -q 'STATUS(RUNNING)'; then
+              | grep -q 'STATUS(Running)'; then
               echo "Queue manager QM1 is running."
               exit 0
             fi
